@@ -21,7 +21,24 @@ class CanDisplayScatter(object):
             **kwargs)
 
 
-class MaPlotData(DataDescription, CanDisplayScatter):
+class CanDisplayLabel(object):
+
+    def plot_label(self, ax, **kwargs):
+        data = self.data
+        highlight_in = self.highlight_in
+        label_in = self.label_in
+        default_label_color = sns.axes_style()['text.color']
+        for idx in data.index:
+            if idx in highlight_in:
+                color = 'r'
+            else:
+                color = default_label_color
+            if (isinstance(label_in, str) and label_in == 'all') or idx in label_in or idx in highlight_in:
+                ax.text(self.data.loc[idx][self.x], self.data.loc[idx][self.y], idx, color=color)
+        return ax
+
+
+class MaPlotData(DataDescription, CanDisplayScatter, CanDisplayLabel):
 
     """Simplfies MaPlot'ing."""
 

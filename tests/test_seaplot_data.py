@@ -1,4 +1,4 @@
-from seaplotlib.seaplot_data import (
+from seaplotlib.data import (
     MaPlotData,
     TwoColumnScatterData,
 )

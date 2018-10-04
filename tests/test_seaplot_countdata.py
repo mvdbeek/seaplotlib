@@ -1,6 +1,6 @@
 import pytest
 
-from seaplotlib.seaplot_plot import CountPlot
+from seaplotlib import plot
 
 
 @pytest.mark.parametrize('title,xlabel,ylabel', [
@@ -9,8 +9,7 @@ from seaplotlib.seaplot_plot import CountPlot
 ])
 @pytest.mark.mpl_image_compare
 def test_maplot_deseq2(deseq_data, title, xlabel, ylabel):
-    p = CountPlot()
-    return p.maplot_deseq2(df=deseq_data,
+    return plot.maplot_deseq2(df=deseq_data,
                            highlight_in=('pogo',),
                            label_in='all',
                            title=title,
@@ -25,8 +24,7 @@ def test_maplot_deseq2(deseq_data, title, xlabel, ylabel):
     ('log10 title', None, None, 'log10', 'log10', True, True),
 ])
 def test_two_column_plot(two_column_data, title, xlabel, ylabel, logx, logy, equal_scale, abline):
-    p = CountPlot()
-    return p.two_column_plot(df=two_column_data,
+    return plot.two_column_plot(df=two_column_data,
                              highlight_in=('pogo',),
                              label_in='all',
                              title=title,
@@ -41,12 +39,4 @@ def test_two_column_plot(two_column_data, title, xlabel, ylabel, logx, logy, equ
 
 @pytest.mark.mpl_image_compare
 def test_volcano(deseq_data):
-    p = CountPlot()
-    return p.volcano_deseq2(df=deseq_data).figure
-
-
-@pytest.mark.mpl_image_compare
-@pytest.mark.parametrize('style', [None, 'black', 'white'])
-def test_style(deseq_data, style):
-    p = CountPlot(style=style)
-    return p.maplot_deseq2(df=deseq_data).figure
+    return plot.volcano_deseq2(df=deseq_data).figure

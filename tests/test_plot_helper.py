@@ -1,10 +1,11 @@
 import pytest
 
 
-from seaplotlib.plot_helper import (
+from seaplotlib.helper import (
     abline,
     despine,
     static_abline,
+    set_style,
 )
 
 
@@ -26,3 +27,11 @@ def test_static_abline(default_image, color):
 def test_despine(default_image):
     despine(default_image)
     return default_image.figure
+
+
+@pytest.mark.mpl_image_compare
+@pytest.mark.parametrize('style', [None, 'black', 'white'])
+def test_style(default_dataframe, style):
+    set_style(style)
+    ax = default_dataframe.plot(kind='scatter', x=0, y=1)
+    return ax.figure
