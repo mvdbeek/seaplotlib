@@ -5,7 +5,7 @@ from seaplotlib.seaplot_plot import CountPlot
 
 @pytest.mark.parametrize('title,xlabel,ylabel', [
     (None, None, None),
-    ('title','xlabel','ylabel')
+    ('title', 'xlabel', 'ylabel')
 ])
 @pytest.mark.mpl_image_compare
 def test_maplot_deseq2(deseq_data, title, xlabel, ylabel):
@@ -37,3 +37,10 @@ def test_two_column_plot(two_column_data, title, xlabel, ylabel, logx, logy, equ
                              equal_scale=equal_scale,
                              abline=abline,
                              ).figure
+
+
+@pytest.mark.mpl_image_compare
+@pytest.mark.parametrize('style', [None, 'black', 'white'])
+def test_style(deseq_data, style):
+    p = CountPlot(style=style)
+    return p.maplot_deseq2(df=deseq_data).figure

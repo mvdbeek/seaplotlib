@@ -1,6 +1,5 @@
 from functools import wraps
 
-import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
@@ -14,6 +13,7 @@ from .seaplot_data import (  # noqa: E402
     MaPlotData,
     TwoColumnScatterData,
 )
+from .styles import styles  # noqa: E402
 
 
 def can_set_title(function):
@@ -56,7 +56,7 @@ def can_create_figure(function):
     @wraps(function)
     def create_figure(*args, **kwargs):
         if not kwargs.get('ax'):
-            figsize = kwargs.get('figsize')
+            figsize = kwargs.pop('figsize', None)
             _, kwargs['ax'] = plt.subplots(figsize=figsize)
         return function(*args, **kwargs)
 
@@ -102,10 +102,16 @@ def tight_layout(function):
 
 
 class CountPlot(object):
-    def __init__(self, style='seaborn-white'):
-        self.style = style
-        self.abline_color = 'w' if 'dark' in self.style else 'black'
-        self.label_color = self.abline_color
+    def __init__(self, style='white'):
+        if isinstance(style, str):
+            if style in styles:
+                style = styles[style]
+        sns.set_style(style)
+        self.style = sns.axes_style()
+        matplotlib.pyplot.rcParams['axes.facecolor'] = self.style['axes.facecolor']
+        matplotlib.pyplot.rcParams['savefig.facecolor'] = self.style['axes.facecolor']
+        self.abline_color = self.style['text.color']
+        self.label_color = self.style['text.color']
 
     def label_plot(self, df, ax, x, y, highlight=('rover',), label='all'):
         for idx in df.index:
@@ -125,10 +131,9 @@ class CountPlot(object):
     @can_create_figure
     def two_column_plot(self, df, ax, highlight_in=(), label_in=(), logx=None, logy=None):
         data = TwoColumnScatterData(df=df, highlight_in=highlight_in, label_in=label_in, logx=logx, logy=logy)
-        with plt.style.context(self.style):
-            ax = data.plot_scatterplot(ax=ax)
-            despine(ax)
-            self.label_plot(df=data.data, ax=ax, x=data.x, y=data.y, highlight=data.highlight_in, label=data.label_in)
+        ax = data.plot_scatterplot(ax=ax)
+        despine(ax)
+        self.label_plot(df=data.data, ax=ax, x=data.x, y=data.y, highlight=data.highlight_in, label=data.label_in)
         return ax
 
     @can_set_title
@@ -138,8 +143,7 @@ class CountPlot(object):
     def maplot_deseq2(self, df, ax, highlight_in=(), label_in=()):
         """Generate maplot."""
         mpd = MaPlotData(df, label_in=label_in, highlight_in=highlight_in)
-        with plt.style.context(self.style):
-            ax = despine(mpd.plot_scatterplot(ax=ax))
-            ax.axhline(color=self.abline_color)
-            self.label_plot(df=mpd.data, ax=ax, x=mpd.x, y=mpd.y, highlight=mpd.highlight_in, label=mpd.label_in)
+        ax = despine(mpd.plot_scatterplot(ax=ax))
+        ax.axhline(color=self.abline_color)
+        self.label_plot(df=mpd.data, ax=ax, x=mpd.x, y=mpd.y, highlight=mpd.highlight_in, label=mpd.label_in)
         return ax
