@@ -7,7 +7,6 @@ import pytest
 
 from click.testing import CliRunner
 
-from seaplotlib import seaplotlib
 from seaplotlib import cli
 
 
