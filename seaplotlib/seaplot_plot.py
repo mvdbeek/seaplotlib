@@ -12,6 +12,7 @@ from .plot_helper import (  # noqa: E402
 from .seaplot_data import (  # noqa: E402
     MaPlotData,
     TwoColumnScatterData,
+    VolcanoPlotData,
 )
 from .styles import styles  # noqa: E402
 
@@ -146,4 +147,17 @@ class CountPlot(object):
         ax = despine(mpd.plot_scatterplot(ax=ax))
         ax.axhline(color=self.abline_color)
         self.label_plot(df=mpd.data, ax=ax, x=mpd.x, y=mpd.y, highlight=mpd.highlight_in, label=mpd.label_in)
+        return ax
+
+    @can_set_title
+    @can_set_xlabel
+    @can_set_ylabel
+    @can_create_figure
+    def volcano_deseq2(self, df, ax, highlight_in=(), label_in=()):
+        data = VolcanoPlotData(df=df, highlight_in=highlight_in, label_in=label_in)
+        ax = data.plot_scatterplot(ax=ax)
+        despine(ax)
+        self.label_plot(df=data.data, ax=ax, x=data.x, y=data.y, highlight=data.highlight_in, label=data.label_in)
+        ax.set_ylim(0)
+        ax.axvline(color=self.abline_color)
         return ax

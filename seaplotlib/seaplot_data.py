@@ -61,6 +61,27 @@ class MaPlotData(DataDescription, CanDisplayScatter):
         return None
 
 
+class VolcanoPlotData(MaPlotData):
+
+    def __init__(self, df, highlight_in=None, label_in=None):
+        super(VolcanoPlotData, self).__init__(df=df, highlight_in=highlight_in, label_in=label_in)
+        self._xlabel = 'log2(FC)'
+        self._ylabel = 'P-adj'
+
+    @property
+    def x(self):
+        return self.xlabel
+
+    @property
+    def y(self):
+        self.data[self.ylabel] = -np.log10(self.data[self._ylabel])
+        return self.ylabel
+
+    @property
+    def ylabel(self):
+        return '-log10(P-adj)'
+
+
 class TwoColumnScatterData(MaPlotData):
 
     def __init__(self, df, highlight_in=None, label_in=None, logx=None, logy=None):

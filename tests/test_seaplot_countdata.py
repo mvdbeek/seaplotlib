@@ -40,6 +40,12 @@ def test_two_column_plot(two_column_data, title, xlabel, ylabel, logx, logy, equ
 
 
 @pytest.mark.mpl_image_compare
+def test_volcano(deseq_data):
+    p = CountPlot()
+    return p.volcano_deseq2(df=deseq_data).figure
+
+
+@pytest.mark.mpl_image_compare
 @pytest.mark.parametrize('style', [None, 'black', 'white'])
 def test_style(deseq_data, style):
     p = CountPlot(style=style)
