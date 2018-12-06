@@ -1,8 +1,11 @@
 """Create UMAP plots from a directory of DamID deseq data."""
 
+import collections
 import os
+import math
 from functools import reduce
 
+import hdbscan
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -13,26 +16,75 @@ sns.set(style='white', context='notebook', rc={'figure.figsize': (14, 10)})
 DIR = 'deseq2 datasets/'
 LOG2_COLUMN = 2
 
+_Result = collections.namedtuple('ClusteringResult', 'embedding clusterable_embedding labels')
 
-def plot_umap(embedding, data, protein, fig, ax, alpha=0.03, cmap='RdYlBu_r'):
+class Result(object):
+
+    def __init__(self, embedding=None, clusterable_embedding=None, labels=None, figure=None):
+        self.embedding = embedding
+        self.clusterable_embedding = clusterable_embedding
+        self.labels = labels
+        self.figure = figure
+
+
+def plot_umap(embedding, data, protein, fig, ax, result, alpha=0.03, cmap='RdYlBu_r', **kwargs):
     """Dispatch to plotting log2 intensity over 2D representation or histogram of clustered GATC density"""
-    if not protein:
-        plot_density_umap(embedding, ax, fig)
+    if protein == 'density':
+        plot_density_umap(embedding, fig=fig, ax=ax)
+    elif protein == 'cluster':
+        plot_cluster(embedding, data, fig=fig, ax=ax, result=result)
     else:
-        plot_chrom_umap(embedding, data, protein, fig, ax, alpha=alpha, cmap=cmap)
+        plot_chrom_umap(embedding, data, protein, fig=fig, ax=ax, alpha=alpha, cmap=cmap, **kwargs)
+    label_cluster(result=result, ax=ax)
+    return result
 
 
-def plot_chrom_umap(embedding, data, protein, fig=None, ax=None, alpha=0.03, cmap='RdYlBu_r'):
+def plot_cluster(embedding, data, fig, ax, result):
+    result.clusterable_embedding = create_clusterable_embedding(df=data)
+    result.labels = hdbscan.HDBSCAN(
+        min_samples=10,
+        min_cluster_size=500,
+    ).fit_predict(result.clusterable_embedding)
+    clustered = (result.labels >= 0)
+    ax.scatter(embedding[~clustered, 0],
+                embedding[~clustered, 1],
+                c=(0.5, 0.5, 0.5),
+                s=0.1,
+                alpha=0.5)
+    mappable = ax.scatter(embedding[clustered, 0],
+                embedding[clustered, 1],
+                c=result.labels[clustered],
+                s=0.1,
+                cmap='Spectral')
+
+    plot_colorbar(mappable, fig, ax)
+
+
+def label_cluster(result, ax):
+    if result.labels is not None:
+        s = pd.Series(result.labels)
+        for label in s.unique():
+            ax.annotate(str(label),
+                         (result.embedding[s == label][:, 0].mean(),
+                          result.embedding[s == label][:, 1].mean()),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         weight='bold',
+                         color='black',
+                         )
+
+
+def plot_chrom_umap(embedding, data, protein, fig=None, ax=None, alpha=0.03, cmap='RdYlBu_r', **kwargs):
     """Plot UMAP visulatization."""
     if fig is None:
         fig, ax = plt.subplots()
-    mappable = ax.scatter(embedding[:, 0], embedding[:, 1], alpha=alpha, c=data[protein], cmap=cmap)
+    mappable = ax.scatter(embedding[:, 0], embedding[:, 1], s=0.1, c=data[protein], cmap=cmap)
     plot_colorbar(mappable, fig, ax)
     ax.set_title(protein)
     return ax
 
 
-def plot_density_umap(embedding, ax, fig, alpha=0.03, cmap='RdYlBu_r', title='GATC density'):
+def plot_density_umap(embedding, fig, ax, alpha=0.03, cmap='RdYlBu_r', title='GATC density'):
     """Plot GATC density."""
     mappable = ax.hist2d(embedding[:, 0], embedding[:, 1], bins=[100, 100], cmap=cmap, normed=True)[-1]
     plot_colorbar(mappable, fig, ax)
@@ -54,9 +106,19 @@ def read_data_from_direcotry(path):
     df_final = reduce(lambda left, right: pd.merge(left, right, on='index'), dataframes)
     return df_final
 
+def create_clusterable_embedding(df, n_neighbors=30, min_dist=0.0, n_components=2, random_state=42, metric='canberra', **kwargs):
+    return umap.UMAP(
+        n_neighbors=n_neighbors,
+        min_dist=min_dist,
+        n_components=n_components,
+        random_state=random_state,
+        metric=metric,
+        **kwargs
+    ).fit_transform(df)
 
-def fit_transform(df):
-    reducer = umap.UMAP()
+
+def fit_transform(df, random_state=42, **kwargs):
+    reducer = umap.UMAP(random_state=random_state, **kwargs)
     embedding = reducer.fit_transform(df)
     return reducer, embedding
 
@@ -66,12 +128,19 @@ def load_embedding(path):
 
 
 def save_embedding(embedding, path):
-    pd.DataFrame.from_records(embedding).to_csv(path, sep='\t')
+    pd.DataFrame.from_records(embedding).to_csv(path, sep='\t', index=None)
 
 
-def plot_proteins(embedding, df):
-    fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(20, 15))
-    for ax, protein in zip(axes.flat, reversed(list(df.columns) + [None])):
-        plot_umap(embedding=embedding, data=df, protein=protein, ax=ax, fig=fig)
+def plot_proteins(embedding, df, density=True, cluster=False, **kwargs):
+    elements = list(df.columns)
+    if density:
+        elements.append('density')
+    if cluster:
+        elements.append('cluster')
+    nrows = int(math.ceil(len(elements) / 2.0))
+    fig, axes = plt.subplots(ncols=2, nrows=nrows, figsize=(20, 15))
+    result = Result(embedding=embedding, figure=fig)
+    for ax, protein in zip(axes.flat, reversed(elements)):
+        result = plot_umap(embedding=embedding, data=df, protein=protein, ax=ax, fig=fig, result=result, **kwargs)
     fig.tight_layout()
-    return fig
+    return result
