@@ -11,9 +11,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', 'seaborn', 'umap-learn', 'hdbscan']
+requirements = ['Click>=6.0', 'seaborn', 'umap-learn', 'hdbscan', 'Cython']
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = ['pytest-runner']
 
 test_requirements = ['pytest', ]
 
