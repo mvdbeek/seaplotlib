@@ -1,7 +1,7 @@
 import numpy as np
 import seaborn as sns
 
-from .seaplotlib import plt
+from . import plt
 from .styles import styles
 
 

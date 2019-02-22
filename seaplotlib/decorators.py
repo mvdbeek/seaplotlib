@@ -1,6 +1,6 @@
 from functools import wraps
 from .helper import abline
-from .seaplotlib import plt
+from . import plt
 
 
 def can_set_title(function):

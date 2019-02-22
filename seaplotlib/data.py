@@ -1,6 +1,6 @@
 import numpy as np
 import seaborn as sns
-
+from matplotlib.font_manager import FontProperties
 
 class DataDescription(object):
 
@@ -17,7 +17,7 @@ class CanDisplayScatter(object):
             y=self.y,
             hue=self.hue,
             data=self.data,
-            legend=False,
+            legend=kwargs.pop('legend', False),
             **kwargs)
 
 
@@ -28,13 +28,24 @@ class CanDisplayLabel(object):
         highlight_in = self.highlight_in
         label_in = self.label_in
         default_label_color = sns.axes_style()['text.color']
+        font0 = FontProperties()
+        font0.set_weight('bold')
         for idx in data.index:
             if idx in highlight_in:
-                color = 'r'
-            else:
                 color = default_label_color
-            if (isinstance(label_in, str) and label_in == 'all') or idx in label_in or idx in highlight_in:
-                ax.text(self.data.loc[idx][self.x], self.data.loc[idx][self.y], idx, color=color)
+                if hasattr(self, 'highlight_text_color') and self.highlight_text_color is not None:
+                    color = self.highlight_text_color
+            if (isinstance(label_in, str) and label_in == 'all') or idx in set(label_in) or (idx in highlight_in and self.label_highlight):
+                if isinstance(label_in, dict):
+                    label = label_in[idx]
+                else:
+                    label = idx
+                x = self.data.loc[idx][self.x]
+                y = self.data.loc[idx][self.y]
+                ax.annotate(label, xy=(x, y),
+                            xytext=(x + 0.4, y + 0.2),
+                            arrowprops=dict(facecolor='black', shrink=0.05),
+                            )
         return ax
 
 
@@ -42,12 +53,15 @@ class MaPlotData(DataDescription, CanDisplayScatter, CanDisplayLabel):
 
     """Simplfies MaPlot'ing."""
 
-    def __init__(self, df, highlight_in=None, label_in=None):
+    def __init__(self, df, highlight_in=None, label_in=None, label_highlight=False, highlight_label=None, highlight_text_color=None):
         super(MaPlotData, self).__init__(df=df)
         self._xlabel = 'log2(Base mean)'
         self._ylabel = 'log2(FC)'
         self.highlight_in = highlight_in
         self.label_in = label_in
+        self.label_highlight = label_highlight
+        self.highlight_label = highlight_label
+        self.highlight_text_color = highlight_text_color
 
     @property
     def x(self):
@@ -73,15 +87,16 @@ class MaPlotData(DataDescription, CanDisplayScatter, CanDisplayLabel):
     @property
     def hue(self):
         if self.highlight_in:
-            self.data['highlight_in'] = self.data.index.isin(self.highlight_in)
-            return 'highlight_in'
+            highlight_label = self.highlight_label or 'highlight_in'
+            self.data[highlight_label] = self.data.index.isin(self.highlight_in)
+            return highlight_label
         return None
 
 
 class VolcanoPlotData(MaPlotData):
 
-    def __init__(self, df, highlight_in=None, label_in=None):
-        super(VolcanoPlotData, self).__init__(df=df, highlight_in=highlight_in, label_in=label_in)
+    def __init__(self, df, highlight_in=None, label_in=None, label_highlight=False, highlight_label=None):
+        super(VolcanoPlotData, self).__init__(df=df, highlight_in=highlight_in, label_in=label_in, label_highlight=label_highlight, highlight_label=highlight_label)
         self._xlabel = 'log2(FC)'
         self._ylabel = 'P-adj'
 
