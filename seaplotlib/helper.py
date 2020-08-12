@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import seaborn as sns
 
@@ -39,6 +40,14 @@ def static_abline(color=None, linetype=LINETYPE):
     gca = plt.gca()
     gca.set_autoscale_on(False)
     gca.plot(gca.get_xlim(), gca.get_ylim(), linetype, color=color)
+
+
+def save_fig_in_dir(fig, filename, directory=None, **kwargs):
+    if directory is not None:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        filename = os.path.join(directory, filename)
+    fig.savefig(filename, **kwargs)
 
 
 def set_style(style='white'):

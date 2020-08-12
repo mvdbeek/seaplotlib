@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from matplotlib.font_manager import FontProperties
 
@@ -53,7 +54,7 @@ class MaPlotData(DataDescription, CanDisplayScatter, CanDisplayLabel):
 
     """Simplfies MaPlot'ing."""
 
-    def __init__(self, df, highlight_in=None, label_in=None, label_highlight=False, highlight_label=None, highlight_text_color=None):
+    def __init__(self, df, highlight_in=None, label_in=None, label_highlight=False, highlight_label=None, highlight_text_color=None, **kwargs):
         super(MaPlotData, self).__init__(df=df)
         self._xlabel = 'log2(Base mean)'
         self._ylabel = 'log2(FC)'
@@ -146,3 +147,26 @@ class TwoColumnScatterData(MaPlotData):
     @property
     def y(self):
         return self._transformed_ylabel or self._ylabel
+
+
+class DataReader(object):
+
+    @staticmethod
+    def read_normalized_table(path):
+        df = pd.read_csv(path, sep='\t', index_col=0)
+        df.index = [x.split('_')[1] for x in df.index]
+        return df
+
+    @staticmethod
+    def read_deseq2_table(path):
+        columns = ['Base mean', 'log2(FC)', 'StdErr', 'Wald-Stats', 'P-value', 'P-adj']
+        df = pd.read_csv(path, sep='\t', header=None, index_col=0).dropna()
+        df.columns = columns
+        df.index = [x.split('_')[-1] for x in df.index]
+        return df
+
+    @staticmethod
+    def order_by_mean(df, columns=12):
+        mean_df = df.loc[:, df.columns[columns:]]
+        mean_df = mean_df.reindex(mean_df.mean(axis=1).sort_values(ascending=False).index)
+        return mean_df

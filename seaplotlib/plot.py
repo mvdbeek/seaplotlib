@@ -30,10 +30,10 @@ def two_column_plot(df, ax, highlight_in=(), label_in=(), logx=None, logy=None):
 @dec.can_set_xlabel
 @dec.can_set_ylabel
 @dec.can_create_figure
-def maplot_deseq2(df, ax, highlight_in=(), label_in=()):
+def maplot_deseq2(df, ax, highlight_in=(), label_in=(), **kwargs):
     """Generate maplot."""
     data = MaPlotData(df, label_in=label_in, highlight_in=highlight_in)
-    ax = despine(data.plot_scatterplot(ax=ax))
+    ax = despine(data.plot_scatterplot(ax=ax, **kwargs))
     ax = data.plot_label(ax=ax)
     ax.axhline(color=get_text_color())
     return ax
